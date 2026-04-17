@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roll to Know Me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F9F7F3;
+      --ink: #1A1A18;
+      --ink-soft: #4A4A46;
+      --ink-ghost: #9A9A94;
+      --line: #E2DFD8;
+      --accent: #2D5BE3;
+      --accent-light: #EDF1FD;
+      --white: #FFFFFF;
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 60px 20px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    header .label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-ghost);
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+
+    header p {
+      margin-top: 12px;
+      font-size: 15px;
+      color: var(--ink-soft);
+      font-weight: 300;
+    }
+
+    .dice-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      margin-bottom: 52px;
+    }
+
+    .dice-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+    }
+
+    .dice {
+      width: 100px;
+      height: 100px;
+      background: var(--white);
+      border: 1.5px solid var(--line);
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.2s;
+      user-select: none;
+      position: relative;
+    }
+
+    .dice:hover { border-color: var(--accent); transform: scale(1.04); }
+    .dice:active { transform: scale(0.96); }
+
+    .dice.rolling {
+      animation: diceRoll 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    @keyframes diceRoll {
+      0%   { transform: rotate(0deg) scale(1); }
+      20%  { transform: rotate(-15deg) scale(1.1); }
+      40%  { transform: rotate(20deg) scale(0.95); }
+      60%  { transform: rotate(-10deg) scale(1.08); }
+      80%  { transform: rotate(8deg) scale(0.98); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+
+    .dice-face {
+      display: grid;
+      width: 64px;
+      height: 64px;
+      gap: 6px;
+      padding: 4px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--ink);
+    }
+
+    .roll-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 36px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .roll-btn:hover { background: #1f47c9; }
+    .roll-btn:active { transform: scale(0.97); }
+    .roll-btn:disabled { background: var(--line); color: var(--ink-ghost); cursor: not-allowed; }
+
+    .face-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 520px;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--ink-soft);
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 50px;
+      padding: 5px 14px;
+    }
+
+    .pill span { font-weight: 500; color: var(--ink); margin-right: 4px; }
+
+    .result-section {
+      width: 100%;
+      max-width: 620px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      pointer-events: none;
+    }
+
+    .result-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .result-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .result-header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .result-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 500;
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .result-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .result-body { padding: 24px 28px; }
+
+    .result-body p {
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink-soft);
+      font-weight: 300;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .info-item {
+      background: var(--cream);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .info-item .key {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-ghost);
+      margin-bottom: 4px;
+    }
+
+    .info-item .val {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 50px;
+    }
+
+    .tag.dark {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    .award-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .award-row:last-child { border-bottom: none; }
+
+    .award-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #FFF8E1;
+      color: #F9A825;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .award-icon.cert {
+      background: #E8F5E9;
+      color: #388E3C;
+    }
+
+    .award-title { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+    .award-sub { font-size: 13px; color: var(--ink-ghost); font-weight: 300; }
+
+    .project-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .project-item:last-child { border-bottom: none; }
+
+    .project-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+    .project-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.6; font-weight: 300; }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.1s;
+    }
+
+    .contact-row:last-child { border-bottom: none; }
+
+    .contact-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--cream);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .contact-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-ghost); margin-bottom: 2px; }
+    .contact-val { font-size: 14px; font-weight: 500; color: var(--accent); }
+
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .trait-card {
+      background: var(--cream);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .trait-emoji { font-size: 24px; margin-bottom: 8px; }
+    .trait-name { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+    .trait-desc { font-size: 12px; color: var(--ink-ghost); line-height: 1.4; font-weight: 300; }
+
+    .skill-bar-row { margin-bottom: 14px; }
+    .skill-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+    .skill-bar-label span:first-child { font-weight: 500; color: var(--ink); }
+    .skill-bar-label span:last-child { color: var(--ink-ghost); }
+    .skill-track { background: var(--cream); border-radius: 50px; height: 6px; overflow: hidden; }
+    .skill-fill { height: 6px; border-radius: 50px; background: var(--accent); width: 0; transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
+
+    footer {
+      margin-top: 64px;
+      font-size: 12px;
+      color: var(--ink-ghost);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <p class="label">Interactive Portfolio</p>
+  <h1>Roll to Know Me</h1>
+  <p>Toss the dice — each face reveals a different side of who I am.</p>
+</header>
+
+<div class="dice-arena">
+  <div class="dice-wrap">
+    <div class="dice" id="dice" onclick="rollDice()" title="Click to roll">
+      <div class="dice-face" id="diceFace"></div>
+    </div>
+  </div>
+
+  <button class="roll-btn" id="rollBtn" onclick="rollDice()">Roll the Dice</button>
+
+  <div class="face-legend">
+    <div class="pill"><span>1</span> About Me</div>
+    <div class="pill"><span>2</span> Achievements</div>
+    <div class="pill"><span>3</span> Skills</div>
+    <div class="pill"><span>4</span> Projects</div>
+    <div class="pill"><span>5</span> Personality</div>
+    <div class="pill"><span>6</span> Contact</div>
+  </div>
+</div>
+
+<div class="result-section" id="resultSection">
+  <div class="result-card">
+    <div class="result-header">
+      <div class="result-number" id="resultNumber">1</div>
+      <div class="result-title" id="resultTitle">About Me</div>
+    </div>
+    <div class="result-body" id="resultBody"></div>
+  </div>
+</div>
+
+<footer>Built with curiosity &amp; a six-sided die.</footer>
+
+<script>
+  const FACES = {
+    1: {
+      dots: [[null,null,null],[null,'center',null],[null,null,null]],
+      title: 'About Me',
+      render: () => `
+        <div class="info-grid" style="margin-bottom:16px;">
+          <div class="info-item"><div class="key">Name</div><div class="val">Your Full Name</div></div>
+          <div class="info-item"><div class="key">Role</div><div class="val">Software Developer</div></div>
+          <div class="info-item"><div class="key">Based In</div><div class="val">Philippines</div></div>
+          <div class="info-item"><div class="key">Available</div><div class="val">Open to Work</div></div>
+        </div>
+        <p>Hi! I'm a passionate developer who loves building clean, purposeful digital experiences. I believe great software is the intersection of thoughtful design and solid engineering. When I'm not coding, you'll find me exploring new ideas, learning constantly, and collaborating with people who share a drive to create something meaningful.</p>`
+    },
+    2: {
+      dots: [[1,null,null],[null,null,null],[null,null,2]],
+      title: 'Achievements',
+      render: () => `
+        <div class="award-row">
+          <div class="award-icon">★</div>
+          <div>
+            <div class="award-title">Best Thesis Award — University Name, 2024</div>
+            <div class="award-sub">Recognized for outstanding undergraduate research in computer science.</div>
+          </div>
+        </div>
+        <div class="award-row">
+          <div class="award-icon">★</div>
+          <div>
+            <div class="award-title">Academic Excellence Award — 2023</div>
+            <div class="award-sub">Awarded for maintaining a top GPA across the academic year.</div>
+          </div>
+        </div>
+        <div class="award-row">
+          <div class="award-icon cert">✓</div>
+          <div>
+            <div class="award-title">Certificate — Full Stack Web Development</div>
+            <div class="award-sub">Issued by Placeholder Course Provider · 2023</div>
+          </div>
+        </div>
+        <div class="award-row">
+          <div class="award-icon cert">✓</div>
+          <div>
+            <div class="award-title">Certificate — UI/UX Design Fundamentals</div>
+            <div class="award-sub">Issued by Placeholder Institute · 2022</div>
+          </div>
+        </div>`
+    },
+    3: {
+      dots: [[1,null,2],[null,null,null],[3,null,null]],
+      title: 'Skills',
+      render: () => {
+        const skills = [
+          { name: 'HTML & CSS', level: 90 },
+          { name: 'JavaScript', level: 82 },
+          { name: 'React / Vue', level: 75 },
+          { name: 'Node.js', level: 68 },
+          { name: 'Python', level: 72 },
+          { name: 'UI/UX Design', level: 65 },
+        ];
+        const bars = skills.map(s => `
+          <div class="skill-bar-row">
+            <div class="skill-bar-label"><span>${s.name}</span><span>${s.level}%</span></div>
+            <div class="skill-track"><div class="skill-fill" data-width="${s.level}"></div></div>
+          </div>`).join('');
+        const tools = ['Git & GitHub','VS Code','Figma','PostgreSQL','Firebase','Docker'].map(t => `<div class="tag">${t}</div>`).join('');
+        return `${bars}<div style="margin-top:20px;"><p style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-ghost);margin-bottom:10px;">Tools & Platforms</p><div class="tag-list">${tools}</div></div>`;
+      }
+    },
+    4: {
+      dots: [[1,null,2],[null,null,null],[3,null,4]],
+      title: 'Projects',
+      render: () => `
+        <div class="project-item">
+          <div class="project-name">Project Alpha</div>
+          <div class="project-desc">A full-stack web application for managing tasks and teams in real time. Built with React, Node.js, and PostgreSQL.</div>
+          <div class="tag-list" style="margin-top:8px;"><div class="tag">React</div><div class="tag">Node.js</div><div class="tag">PostgreSQL</div></div>
+        </div>
+        <div class="project-item">
+          <div class="project-name">Portfolio Website v2</div>
+          <div class="project-desc">A personal portfolio site with smooth animations and a clean, minimal design showcasing projects and skills.</div>
+          <div class="tag-list" style="margin-top:8px;"><div class="tag">HTML/CSS</div><div class="tag">JavaScript</div></div>
+        </div>
+        <div class="project-item">
+          <div class="project-name">StudyBuddy App</div>
+          <div class="project-desc">A mobile-first study scheduler that uses spaced repetition algorithms to help students learn more effectively.</div>
+          <div class="tag-list" style="margin-top:8px;"><div class="tag">Vue</div><div class="tag">Firebase</div></div>
+        </div>
+        <div class="project-item">
+          <div class="project-name">CLI Budget Tracker</div>
+          <div class="project-desc">A lightweight command-line tool written in Python for tracking daily expenses with export to CSV reports.</div>
+          <div class="tag-list" style="margin-top:8px;"><div class="tag">Python</div><div class="tag">CSV</div></div>
+        </div>`
+    },
+    5: {
+      dots: [[1,null,2],[null,3,null],[4,null,5]],
+      title: 'Extra Personality',
+      render: () => `
+        <p style="margin-bottom:20px;">Beyond the code and degrees, here's the human behind the screen.</p>
+        <div class="trait-grid">
+          <div class="trait-card"><div class="trait-emoji">☕</div><div class="trait-name">Coffee Devotee</div><div class="trait-desc">Fueled by strong brews and late-night debugging sessions.</div></div>
+          <div class="trait-card"><div class="trait-emoji">📚</div><div class="trait-name">Lifelong Learner</div><div class="trait-desc">Always reading, always curious about something new.</div></div>
+          <div class="trait-card"><div class="trait-emoji">🎮</div><div class="trait-name">Gamer at Heart</div><div class="trait-desc">Strategy games and story-driven RPGs are my recharge mode.</div></div>
+          <div class="trait-card"><div class="trait-emoji">✏️</div><div class="trait-name">Sketch & Doodle</div><div class="trait-desc">I think with my pen — diagrams, wireframes, and doodles everywhere.</div></div>
+          <div class="trait-card"><div class="trait-emoji">🌏</div><div class="trait-name">Local Explorer</div><div class="trait-desc">Finds the best hidden spots in every town I visit.</div></div>
+          <div class="trait-card"><div class="trait-emoji">🤝</div><div class="trait-name">Team Player</div><div class="trait-desc">I genuinely enjoy collaboration more than working alone.</div></div>
+        </div>`
+    },
+    6: {
+      dots: [[1,null,2],[3,null,4],[5,null,6]],
+      title: 'Contact',
+      render: () => `
+        <p style="margin-bottom:20px;">Let's connect — I'm always open to new opportunities, collaborations, or just a good conversation.</p>
+        <div class="contact-row">
+          <div class="contact-icon">✉</div>
+          <div><div class="contact-label">Email</div><div class="contact-val">yourname@email.com</div></div>
+        </div>
+        <div class="contact-row">
+          <div class="contact-icon">in</div>
+          <div><div class="contact-label">LinkedIn</div><div class="contact-val">linkedin.com/in/yourprofile</div></div>
+        </div>
+        <div class="contact-row">
+          <div class="contact-icon">&lt;/&gt;</div>
+          <div><div class="contact-label">GitHub</div><div class="contact-val">github.com/yourusername</div></div>
+        </div>
+        <div class="contact-row">
+          <div class="contact-icon">@</div>
+          <div><div class="contact-label">Twitter / X</div><div class="contact-val">@yourhandle</div></div>
+        </div>`
+    }
+  };
+
+  const DOT_LAYOUTS = {
+    1: [[0,0,0],[0,1,0],[0,0,0]],
+    2: [[0,0,1],[0,0,0],[1,0,0]],
+    3: [[1,0,0],[0,1,0],[0,0,1]],
+    4: [[1,0,1],[0,0,0],[1,0,1]],
+    5: [[1,0,1],[0,1,0],[1,0,1]],
+    6: [[1,0,1],[1,0,1],[1,0,1]]
+  };
+
+  function renderDiceFace(num) {
+    const layout = DOT_LAYOUTS[num];
+    const face = document.getElementById('diceFace');
+    face.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    face.innerHTML = '';
+    layout.forEach(row => {
+      row.forEach(cell => {
+        const d = document.createElement('div');
+        if (cell) { d.className = 'dot'; }
+        else { d.style.width = '10px'; d.style.height = '10px'; }
+        face.appendChild(d);
+      });
+    });
+  }
+
+  function animateSkills() {
+    setTimeout(() => {
+      document.querySelectorAll('.skill-fill').forEach(el => {
+        el.style.width = el.dataset.width + '%';
+      });
+    }, 80);
+  }
+
+  let isRolling = false;
+
+  function rollDice() {
+    if (isRolling) return;
+    isRolling = true;
+
+    const btn = document.getElementById('rollBtn');
+    const dice = document.getElementById('dice');
+    const section = document.getElementById('resultSection');
+
+    btn.disabled = true;
+    section.classList.remove('visible');
+    dice.classList.add('rolling');
+
+    let ticks = 0;
+    const interval = setInterval(() => {
+      const temp = Math.ceil(Math.random() * 6);
+      renderDiceFace(temp);
+      ticks++;
+      if (ticks >= 10) {
+        clearInterval(interval);
+        const final = Math.ceil(Math.random() * 6);
+        renderDiceFace(final);
+        showResult(final);
+      }
+    }, 60);
+  }
+
+  function showResult(num) {
+    const face = FACES[num];
+    document.getElementById('resultNumber').textContent = num;
+    document.getElementById('resultTitle').textContent = face.title;
+    document.getElementById('resultBody').innerHTML = face.render();
+
+    setTimeout(() => {
+      document.getElementById('dice').classList.remove('rolling');
+      document.getElementById('resultSection').classList.add('visible');
+      document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      if (num === 3) animateSkills();
+
+      isRolling = false;
+      document.getElementById('rollBtn').disabled = false;
+      document.getElementById('rollBtn').textContent = 'Roll Again';
+    }, 150);
+  }
+
+  renderDiceFace(1);
+</script>
+</body>
+</html>
